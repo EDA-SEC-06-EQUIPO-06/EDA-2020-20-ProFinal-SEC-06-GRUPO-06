@@ -39,8 +39,9 @@ operación seleccionada.
 #  Ruta a los archivos
 # ___________________________________________________
 
-
-Afile = 'taxi-trips-wrvz-psew-subset-medium.csv'
+small = 'taxi-trips-wrvz-psew-subset-small.csv'
+medium = 'taxi-trips-wrvz-psew-subset-medium.csv'
+large = 'taxi-trips-wrvz-psew-subset-large.csv'
 
 # ___________________________________________________
 #  Menu principal
@@ -61,7 +62,12 @@ def printMenu():
 
 def optionTwo():
     print("\nCargando información de taxis....")
-    controller.loadData(cont, Afile)
+    if Afile == "small":
+       controller.loadData(cont, small)
+    if Afile == "medium":
+       controller.loadData(cont, medium)   
+    if Afile == "large":
+       controller.loadData(cont, large)     
 
 
 def optionThree():
@@ -90,6 +96,7 @@ while True:
         cont = controller.init()
 
     elif int(inputs[0]) == 2:
+        Afile = input("Escriba el archivo a utilizar (small, medium o large): ")
         executiontime = timeit.timeit(optionTwo, number=1)
         print("Tiempo de ejecución: " + str(executiontime))
 

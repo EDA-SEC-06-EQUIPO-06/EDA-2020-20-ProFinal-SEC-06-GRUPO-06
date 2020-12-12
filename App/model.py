@@ -28,14 +28,9 @@ from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
 assert config
 
-"""
-En este archivo definimos los TADs que vamos a usar,
-es decir contiene los modelos con los datos en memoria
-
-"""
 
 # -----------------------------------------------------
-# API del TAD Catalogo de Libros
+# API del TAD de Taxis
 # -----------------------------------------------------
 
 
@@ -47,7 +42,8 @@ def newAnalyzer():
 
     """
     analyzer = {'taxis': None,
-               'companies': None}
+               'companies': None,
+               "dateIndex": None}
 
     analyzer['taxis'] = []   
     analyzer['companies'] = mp.newMap(50,
@@ -59,15 +55,12 @@ def newAnalyzer():
 
     return analyzer
 
-
-
-# Funciones para agregar informacion al catalogo
-
+# Funciones para agregar informacion sobre viajes
 
 def newCompany(name):
     """
-    Crea una nueva estructura para modelar los libros de un autor
-    y su promedio de ratings
+    Crea una nueva estructura para modelar las compañías de taxis,
+    su número de servicios y sus taxis afiliados
     """
     companies = {'name': "", 
               "taxis": lt.newList('SINGLE_LINKED', compareTaxiIds),
@@ -75,16 +68,17 @@ def newCompany(name):
     companies['name'] = name
     return companies
 
-def addCompany(analyzer, trip):
+def addTrips(analyzer, trip):
     """
     """
+    if trip["taxi_id"] not in analyzer["taxis"]:
+       analyzer["taxis"].append(trip["taxi_id"])   
+    addTaxiDate(analyzer, trip)   
     companyname = trip["company"]
     if companyname == "":
        companyname = "Independent Owner" 
     companies = analyzer['companies']
     existcompany = mp.contains(companies, companyname)
-    if trip["taxi_id"] not in analyzer["taxis"]:
-       analyzer["taxis"].append(trip["taxi_id"]) 
     if existcompany:
         entry = mp.get(companies, companyname)
         company = me.getValue(entry)
@@ -92,9 +86,8 @@ def addCompany(analyzer, trip):
         company = newCompany(companyname)
         mp.put(companies, companyname, company)  
     if lt.isPresent(company["taxis"], trip["taxi_id"]) == False:    
-       lt.addLast(company['taxis'], trip["taxi_id"])
+       lt.addLast(company['taxis'], trip["taxi_id"]) 
     company["numservices"] += 1
-    addTaxiDate(analyzer, trip)
 
 def addTaxiDate(analyzer, trip):
     """
@@ -148,7 +141,6 @@ def newTaxi(name):
 
 def getTopCompanies(analyzer, numberM, numberN):
     """
-    Retorna un autor con sus libros a partir del nombre del autor
     """
     companies = mp.valueSet(analyzer["companies"])
     top_taxis = {}
@@ -199,7 +191,7 @@ def getTaxisPointsByRange(analyzer, initialDate, finalDate, numN):
 
 def compareTaxiIds(id1, id2):
     """
-    Compara dos ids de libros
+    Compara dos ids de taxis
     """
     if not isinstance(id2, str):
        id2 = me.getKey(id2)
@@ -213,8 +205,7 @@ def compareTaxiIds(id1, id2):
 
 def compareCompanies(id, entry):
     """
-    Compara dos ids de libros, id es un identificador
-    y entry una pareja llave-valor
+    Compara dos compañías
     """
     identry = me.getKey(entry)
     if id == identry:

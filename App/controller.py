@@ -55,17 +55,17 @@ def loadData(analyzer, tripsfile):
     """
     Carga los datos de los archivos en el modelo
     """
-    loadCompanies(analyzer, tripsfile)
+    loadTrips(analyzer, tripsfile)
 
 
-def loadCompanies(analyzer, tripsfile):
+def loadTrips(analyzer, tripsfile):
     """
     """
     tripsfile = cf.data_dir + tripsfile
     input_file = csv.DictReader(open(tripsfile, encoding="utf-8"),
                                 delimiter=",")
     for trip in input_file:
-        model.addCompany(analyzer, trip)
+        model.addTrips(analyzer, trip)
 
 
 # ___________________________________________________
