@@ -18,15 +18,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * Contribución de:
- *
- * Dario Correal
- *
  """
 
 import config as cf
 from App import model
 import csv
+
 
 """
 El controlador se encarga de mediar entre la vista y el modelo.
@@ -41,11 +38,48 @@ recae sobre el controlador.
 # ___________________________________________________
 
 
+def init():
+    """
+    Llama la funcion de inicializacion.
+    """
+    analyzer = model.newAnalyzer()
+    return analyzer
+
+
 # ___________________________________________________
 #  Funciones para la carga de datos y almacenamiento
 #  de datos en los modelos
 # ___________________________________________________
 
+def loadData(analyzer, tripsfile):
+    """
+    Carga los datos de los archivos en el modelo
+    """
+    loadCompanies(analyzer, tripsfile)
+
+
+def loadCompanies(analyzer, tripsfile):
+    """
+    """
+    tripsfile = cf.data_dir + tripsfile
+    input_file = csv.DictReader(open(tripsfile, encoding="utf-8"),
+                                delimiter=",")
+    for trip in input_file:
+        model.addCompany(analyzer, trip)
+
+
 # ___________________________________________________
 #  Funciones para consultas
 # ___________________________________________________
+
+def getTopCompanies(analyzer, numberM, numberN):
+    """
+    Retorna el top de compañías
+    """
+    topcompanies = model.getTopCompanies(analyzer, numberM, numberN)
+    return topcompanies
+
+def getTaxisPointsByRange(analyzer, initialDate, finalDate, numN ):
+    taxipointsbyrange = model.getTaxisPointsByRange(analyzer, initialDate, finalDate, numN)
+    return taxipointsbyrange
+

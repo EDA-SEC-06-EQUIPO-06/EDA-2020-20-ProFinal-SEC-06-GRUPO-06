@@ -18,19 +18,15 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * Contribución de:
- *
- * Dario Correal
- *
  """
-
 
 import sys
 import config
+from DISClib.ADT import list as lt
+from DISClib.ADT import map as mp
 from App import controller
-from DISClib.ADT import stack
-import timeit
 assert config
+import timeit
 
 """
 La vista se encarga de la interacción con el usuario.
@@ -40,14 +36,82 @@ operación seleccionada.
 """
 
 # ___________________________________________________
-#  Variables
+#  Ruta a los archivos
 # ___________________________________________________
 
+
+Afile = 'taxi-trips-wrvz-psew-subset-medium.csv'
 
 # ___________________________________________________
 #  Menu principal
 # ___________________________________________________
 
+
+def printMenu():
+    print("\n")
+    print("*******************************************")
+    print("Bienvenido")
+    print("1- Inicializar Analizador")
+    print("2- Cargar información de taxis")
+    print("3- Requerimiento 1")
+    print("4- Requerimiento 2")
+    print("5- Requerimiento 3")
+    print("0- Salir")
+    print("*******************************************")
+
+def optionTwo():
+    print("\nCargando información de taxis....")
+    controller.loadData(cont, Afile)
+
+
+def optionThree():
+    res = controller.getTopCompanies(cont, int(numM), int(numN))
+    print("El numero de taxis:", res[0])
+    print("El numero de compañías:", res[1])
+    print("El top de companías con más taxis afiliados:", res[2])
+    print("El top de companías que más servicios prestaron:", res[3])
+
+def optionFour():
+    res = controller.getTaxisPointsByRange(cont, initialDate, finalDate, int(numN))
+    print("Taxis con más puntos: ", res)
+
+def optionFive():
+    print("Escriba..")
+
 """
 Menu principal
 """
+while True:
+    printMenu()
+    inputs = input('Seleccione una opción para continuar\n>')
+
+    if int(inputs[0]) == 1:
+        print("\nInicializando....")
+        cont = controller.init()
+
+    elif int(inputs[0]) == 2:
+        executiontime = timeit.timeit(optionTwo, number=1)
+        print("Tiempo de ejecución: " + str(executiontime))
+
+    elif int(inputs[0]) == 3:
+        numM = input("Número de compañías a retornar con más taxis afiliados: ")
+        numN = input("Número de compañías a retornar con más servicios prestados: ")
+        executiontime = timeit.timeit(optionThree, number=1)
+        print("Tiempo de ejecución: " + str(executiontime))
+
+    elif int(inputs[0]) == 4:
+        initialDate = input("Escriba la fecha inicial (Ejm: 2019-10-31): ")
+        finalDate = input("Escriba la fecha final ó NA si solo desea la fecha inicial: ")
+        if finalDate == "NA":
+           finalDate = initialDate 
+        numN = input("Número de taxis a retornar con más puntos: ")
+        executiontime = timeit.timeit(optionFour, number=1)
+        print("Tiempo de ejecución: " + str(executiontime))
+
+    elif int(inputs[0]) == 5:
+        executiontime = timeit.timeit(optionFive, number=1)
+        print("Tiempo de ejecución: " + str(executiontime))
+    else:
+        sys.exit(0)
+sys.exit(0)
+
