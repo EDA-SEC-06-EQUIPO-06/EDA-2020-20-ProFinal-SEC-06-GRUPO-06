@@ -64,10 +64,10 @@ def optionTwo():
     print("\nCargando información de taxis....")
     if Afile == "small":
        controller.loadData(cont, small)
-    if Afile == "medium":
+    elif Afile == "medium":
        controller.loadData(cont, medium)   
-    if Afile == "large":
-       controller.loadData(cont, large)     
+    elif Afile == "large":
+       controller.loadData(cont, large)      
 
 
 def optionThree():
@@ -107,7 +107,7 @@ while True:
         print("Tiempo de ejecución: " + str(executiontime))
 
     elif int(inputs[0]) == 4:
-        initialDate = input("Escriba la fecha inicial (Ejm: 2019-10-31): ")
+        initialDate = input("Escriba la fecha inicial (Formato: AÑO-MES-DIA): ")
         finalDate = input("Escriba la fecha final ó NA si solo desea la fecha inicial: ")
         if finalDate == "NA":
            finalDate = initialDate 
