@@ -83,3 +83,11 @@ def getTaxisPointsByRange(analyzer, initialDate, finalDate, numN ):
     taxipointsbyrange = model.getTaxisPointsByRange(analyzer, initialDate, finalDate, numN)
     return taxipointsbyrange
 
+
+def getstationsinrange(analyzer,cao,rti,rtf):
+    stationsinrange = model.getstationsinrange(analyzer,cao,rti,rtf)
+    return stationsinrange
+
+def getbestroute(analyzer,lcao,cad):
+    bestroute = model.getbestroute(analyzer,lcao,cad)
+    return bestroute

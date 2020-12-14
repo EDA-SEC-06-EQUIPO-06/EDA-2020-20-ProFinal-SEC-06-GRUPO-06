@@ -21,11 +21,17 @@
  """
 import config
 import operator
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
+from DISClib.DataStructures import edge as e    
 from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
+from DISClib.ADT.graph import gr
+from DISClib.Algorithms.Graphs import scc
+from DISClib.Algorithms.Graphs import dfs
+from DISClib.Algorithms.Graphs import dijsktra as djk
+from DISClib.Utils import error as error
 assert config
 
 
@@ -43,7 +49,8 @@ def newAnalyzer():
     """
     analyzer = {'taxis': None,
                'companies': None,
-               "dateIndex": None}
+               "dateIndex": None,
+               "Taxi_Trips": None}
 
     analyzer['taxis'] = []   
     analyzer['companies'] = mp.newMap(50,
@@ -51,8 +58,22 @@ def newAnalyzer():
                                    loadfactor=0.4,
                                    comparefunction=compareCompanies)
     analyzer['dateIndex'] = om.newMap(omaptype='RBT',
-                                      comparefunction=compareDates)                                    
+                                      comparefunction=compareDates)    
 
+    analyzer['Taxi_Trips'] = {
+                    'stops': None,
+                    'connections': None,
+                    'components': None,
+                    'paths': None,              
+                    }
+    analyzer['Taxi_Trips']['stops'] = mp.newMap(numelements=14000,
+                                     maptype='PROBING',
+                                     comparefunction=compareStopIds)
+
+    analyzer['Taxi_Trips']['connections'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=True,
+                                              size=14000,
+                                              comparefunction=compareStopIds)
     return analyzer
 
 # Funciones para agregar informacion sobre viajes
@@ -69,8 +90,6 @@ def newCompany(name):
     return companies
 
 def addTrips(analyzer, trip):
-    """
-    """
     if trip["taxi_id"] not in analyzer["taxis"]:
        analyzer["taxis"].append(trip["taxi_id"])   
     addTaxiDate(analyzer, trip)   
@@ -88,6 +107,42 @@ def addTrips(analyzer, trip):
     if lt.isPresent(company["taxis"], trip["taxi_id"]) == False:    
        lt.addLast(company['taxis'], trip["taxi_id"]) 
     company["numservices"] += 1
+
+
+    origin= trip['pickup_community_area'].replace(" ","")
+    destination= trip ['dropoff_community_area'].replace(" ","")
+    if origin == None or origin == "":
+        origin=0
+    if destination == None or destination == "":
+        destination=0
+    origin = int(float(origin))
+    destination = int(float(destination))
+
+    if origin != destination:
+        if trip['trip_seconds'] != "":
+            duration = float(trip ['trip_seconds'])
+        else:
+            duration=float(0)
+
+        oDateTime=datetime.strptime(str(trip['trip_start_timestamp']), '%Y-%m-%dT%H:%M:%S.%f')
+        odt=oDateTime.time()
+        odtt=odt.strftime("%H:%M")
+        Corigin = str(origin)+"-"+odtt
+
+
+        if trip['trip_end_timestamp'] == "":
+            ndt = timedelta(seconds=int(duration))
+            tempdt=datetime.strptime(str(trip['trip_start_timestamp']), '%Y-%m-%dT%H:%M:%S.%f')
+            dDateTime = tempdt + ndt
+        else:
+            dDateTime = datetime.strptime(str(trip['trip_end_timestamp']), '%Y-%m-%dT%H:%M:%S.%f')
+        ddt=dDateTime.time()
+        ddtt=ddt.strftime("%H:%M")
+        Cdestination =  str(destination)+"-"+ddtt
+
+        addStop(analyzer, Corigin)
+        addStop(analyzer, Cdestination)
+        addConnection (analyzer, Corigin, Cdestination, duration)
 
 def addTaxiDate(analyzer, trip):
     """
@@ -133,6 +188,30 @@ def newTaxi(name):
               "numservices": 1}
     taxi_data['name'] = name
     return taxi_data
+
+def addStop(analyzer, stopid):
+    """
+    Adiciona una estación como un vertice del grafo
+    """
+    try:
+        if not gr.containsVertex(analyzer['Taxi_Trips']['connections'], stopid):
+            gr.insertVertex(analyzer['Taxi_Trips']['connections'], stopid)
+        return analyzer
+    except Exception as exp:
+        error.reraise(exp, 'model:addStation')
+
+
+def addConnection(analyzer, origin, destination, duration):
+    """
+    Adiciona un arco entre dos estaciones. Si el arco existe se actualiza su peso con el promedio.
+    """
+    edge = gr.getEdge(analyzer['Taxi_Trips']['connections'], origin, destination)
+    if edge is None:
+        gr.addEdge(analyzer['Taxi_Trips']['connections'], origin, destination, duration)
+    else:
+        e.updateAverageWeight(edge,duration)
+    return analyzer     
+
 
 # ==============================
 # Funciones de consulta
@@ -183,6 +262,60 @@ def getTaxisPointsByRange(analyzer, initialDate, finalDate, numN):
     top_alfa = sorted(dicc_taxi.items(), key=operator.itemgetter(1), reverse=True)   
     return top_alfa[0:numN]      
 
+def getstationsinrange(analyzer,cao,rti,rtf):
+    dti=datetime.strptime(rti, '%H:%M')
+    dtii=dti.time()
+    dtf=datetime.strptime(rtf, '%H:%M')
+    dtff=dtf.time()
+    
+    index=dtii
+    lph=[]
+    while index <= dtff:
+        lph.append(index)
+        d = datetime.now()
+        combineindex = datetime.combine(d, index)
+        index = combineindex + timedelta(minutes=15)
+        index=index.time()
+    lcao=[]
+    for i in lph:
+        horario=i.strftime("%H:%M")
+        rvertice= cao+"-"+horario
+        if gr.containsVertex(analyzer['Taxi_Trips']['connections'],rvertice) is True:
+            lcao.append(rvertice)
+    return lcao
+
+def getbestroute(analyzer,lcao,cad):
+    lcad = getstationsinrange(analyzer,cad,"00:00","23:59")
+    cmenor=10000
+    lcmenores=[]
+    for phora in lcao:
+        for pdestino in lcad:
+            mCostPath = float(djk.distTo(phora,pdestino))
+            if mCostPath < cmenor:
+                cmenor = mCostPath
+        lcmenores.append(cmenor)
+    cminimo=min(lcmenores)
+    posicion=lcmenores.index(cminimo)
+    elvertice=lcao[posicion]
+    return elvertice
+    
+
+def minimumCostPaths(analyzer, initialStation):
+    """
+    Calcula los caminos de costo mínimo desde la estacion initialStation
+    a todos los demas vertices del grafo
+    """
+    analyzer['Taxi_Trips']['paths'] = djk.Dijkstra(analyzer['Taxi_Trips']['connections'], initialStation)
+    return analyzer
+
+def minimumCostPath(analyzer, destStation):
+    """
+    Retorna el camino de costo minimo entre la estacion de inicio
+    y la estacion destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+    path = djk.pathTo(analyzer['Taxi_Trips']['paths'], destStation)
+    return path
 
 # ==============================
 # Funciones de Comparacion
@@ -225,3 +358,27 @@ def compareDates(date1, date2):
         return 1
     else:
         return -1        
+
+def compareTrips(trip1, route2):
+    """
+    Compara dos rutas
+    """
+    trip2=route2['key']
+    if (trip1 == trip2):
+        return 0
+    elif (trip1 > trip2):
+        return 1
+    else:
+        return -1
+
+def compareStopIds(stop, keyvaluestop):
+    """
+    Compara dos estaciones
+    """
+    stopcode = keyvaluestop['key']
+    if (stop == stopcode):
+        return 0
+    elif (stop > stopcode):
+        return 1
+    else:
+        return -1

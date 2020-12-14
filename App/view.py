@@ -25,6 +25,7 @@ import config
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from App import controller
+from DISClib.ADT import stack
 assert config
 import timeit
 
@@ -82,7 +83,20 @@ def optionFour():
     print("Taxis con más puntos: ", res)
 
 def optionFive():
-    print("Escriba..")
+    lcao = controller.getstationsinrange(cont,cao,rti,rtf)
+    mruta = controller.getbestroute(cont, lcao,cad)
+    print("El mejor horario (hora:minutos) de inicio de viaje: ",mruta)
+    controller.minimumCostPaths(cont, cao)
+    path = controller.minimumCostPath(cont, cad)
+    if path is not None:
+        pathlen = stack.size(path)
+        print('El camino es de longitud: ' + str(pathlen))
+        while (not stack.isEmpty(path)):
+            stop = stack.pop(path)
+            print(stop)
+    else:
+        print('No hay camino')
+
 
 """
 Menu principal
@@ -116,6 +130,10 @@ while True:
         print("Tiempo de ejecución: " + str(executiontime))
 
     elif int(inputs[0]) == 5:
+        cao = input("Escriba el numero de la Community Area origen: ")
+        cad = input("Escriba el numero de la Community Area destino: ")
+        rti = input("Escriba la hora y minuto de partida minima del viaje (FORMATO: hora:minutos): ")
+        rtf = input("Escriba la hora y minuto de partida maxima del viaje (FORMATO: hora:minutos): ")
         executiontime = timeit.timeit(optionFive, number=1)
         print("Tiempo de ejecución: " + str(executiontime))
     else:
